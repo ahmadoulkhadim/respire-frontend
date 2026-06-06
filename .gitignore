@@ -172,3 +172,18 @@ ENV/
 # Build directories
 dist/
 build/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Node
+node_modules/
+
+# IDEs
+.vscode/
+.idea/
+
