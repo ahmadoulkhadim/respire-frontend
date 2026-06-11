@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: respire-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: respire_root_pass
+      MYSQL_DATABASE: respire_db
+      MYSQL_USER: respire_user
+      MYSQL_PASSWORD: respire_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - respire_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: respire-influxdb
+    environment:
+      INFLUXDB_DB: respire_data
+      INFLUXDB_ADMIN_USER: admin
+      INFLUXDB_ADMIN_PASSWORD: admin_password
+      INFLUXDB_HTTP_AUTH_ENABLED: "true"
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    networks:
+      - respire_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: respire-api
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: respire_user
+      MYSQL_PASSWORD: respire_password
+      MYSQL_DATABASE: respire_db
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_TOKEN: your_influx_token
+      INFLUX_ORG: your_org
+      INFLUX_BUCKET: respire_data
+      SECRET_KEY: your-super-secret-key-change-in-production
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+    networks:
+      - respire_network
+    volumes:
+      - ./app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+networks:
+  respire_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  influxdb_data:
