@@ -1,166 +1,162 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+  HeartPulse, Users, BarChart3, Smartphone,
+} from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell,
+} from 'recharts';
+import api from '../services/api';
+
+const COLORS = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6'];
+
+const CustomTooltip = ({ active, payload }) => {
+  if (!active || !payload) return null;
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm text-xs">
+      {payload.map((entry, i) => (
+        <p key={i} className="text-gray-600">
+          <span className="inline-block w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: entry.color }} />
+          {entry.name}: <span className="font-semibold">{entry.value}</span>
+        </p>
+      ))}
+    </div>
+  );
+};
 
 const Sante = () => {
-  const [symptoms, setSymptoms] = useState({
-    toux: null,
-    respiration: null,
-    tete: null,
-    fatigue: null
-  });
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleSymptomChange = (symptom, value) => {
-    setSymptoms(prev => ({ ...prev, [symptom]: value }));
-  };
+  useEffect(() => {
+    api.get('/api/sante/stats')
+      .then(res => setStats(res.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
-  const progress = Object.values(symptoms).filter(v => v !== null).length;
+  const pieData = stats?.topSymptomes?.map(s => ({
+    name: s.nom,
+    value: s.count,
+    pourcentage: s.pourcentage,
+  })) || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
-      {/* Hero Section */}
-      <div className="hero-section relative overflow-hidden">
-        <div className="absolute -top-1/2 -left-1/4 w-96 h-96 bg-blue-400 rounded-full opacity-10 blur-3xl"></div>
-        <div className="relative max-w-4xl mx-auto px-4 py-16">
-          <h1 className="text-5xl font-bold text-white mb-3">🏥 Observatoire Citoyen</h1>
-          <p className="text-xl text-blue-100">Contribuez à la science • Partagez vos symptômes</p>
+    <div className="pt-16">
+      {/* Header */}
+      <div className="bg-rose-700">
+        <div className="max-w-7xl mx-auto px-6 py-10">
+          <div>
+            <h1 className="text-white text-2xl font-display font-bold">Observatoire Citoyen</h1>
+            <p className="text-rose-200 text-sm mt-1">Données collectées via l'application mobile</p>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-12 -mt-8 relative z-10">
-        {/* Info Card */}
-        <div className="card-premium mb-8 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-white/50">
-            <div className="flex justify-between items-center flex-wrap gap-4">
-              <div>
-                <p className="text-sm text-gray-600 uppercase tracking-widest font-bold mb-1">Aujourd'hui</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600 uppercase tracking-widest font-bold mb-1">Votre exposition</p>
-                <p className="text-3xl font-bold text-respire-600">
-                  3,2 <span className="text-lg">🚬</span>
-                </p>
-              </div>
-            </div>
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="w-6 h-6 border-2 border-respire-500 border-t-transparent rounded-full animate-spin" />
           </div>
-        </div>
-
-        {/* Formulaire */}
-        <div className="card-premium overflow-hidden shadow-xl animate-fade-in">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-air-good to-green-600 p-8 text-white relative overflow-hidden">
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white opacity-5 rounded-full blur-2xl"></div>
-            
-            <div className="relative">
-              <h2 className="text-3xl font-bold font-display mb-2">Comment vous sentez-vous ?</h2>
-              <p className="text-green-100 text-lg">Vos réponses sont anonymes et précieuses pour la recherche</p>
+        ) : (
+          <>
+            {/* Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {[
+                { icon: Smartphone, label: 'Participants mobiles', value: stats?.participants || '—', sub: 'citoyens actifs' },
+                { icon: BarChart3, label: 'Déclarations', value: stats?.declarations || '—', sub: 'cette semaine' },
+                { icon: Users, label: 'Taux de participation', value: stats?.participants ? `${Math.round((stats.declarations / stats.participants) * 100)}%` : '—', sub: 'moyenne hebdo' },
+                { icon: HeartPulse, label: 'Données', value: '100% anonymes', sub: 'Conforme CDP Sénégal' },
+              ].map(card => (
+                <div key={card.label} className="bg-white rounded-lg border border-gray-200 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <card.icon className="w-4 h-4 text-gray-400" />
+                    <span className="text-xs text-gray-400">{card.sub}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-0.5">{card.label}</p>
+                  <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+                </div>
+              ))}
             </div>
-          </div>
 
-          {/* Progress Bar */}
-          <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">Progression</span>
-              <span className="text-2xl font-bold text-respire-600">{progress}/4</span>
-            </div>
-            <div className="h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-              <div 
-                className="h-full bg-gradient-to-r from-air-good to-green-500 rounded-full transition-all duration-500"
-                style={{ width: `${(progress/4)*100}%` }} 
-              />
-            </div>
-          </div>
+            {pieData.length > 0 ? (
+              <div className="grid lg:grid-cols-2 gap-6">
+                {/* Bar Chart */}
+                <div className="bg-white rounded-lg border border-gray-200 p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <BarChart3 className="w-4 h-4 text-gray-400" />
+                    <h3 className="text-sm font-semibold text-gray-900">Symptômes déclarés</h3>
+                  </div>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={pieData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                          {pieData.map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} />)}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
 
-          {/* Questions */}
-          <div className="divide-y divide-gray-200">
-            {[
-              { id: 'toux', label: 'As-tu toussé aujourd\'hui ?', emoji: '🤧', color: 'from-red-400' },
-              { id: 'respiration', label: 'As-tu eu du mal à respirer ?', emoji: '😮‍💨', color: 'from-orange-400' },
-              { id: 'tete', label: 'As-tu eu des maux de tête ?', emoji: '🤕', color: 'from-purple-400' },
-              { id: 'fatigue', label: 'Te sens-tu fatigué sans raison ?', emoji: '😴', color: 'from-blue-400' }
-            ].map((question, idx) => (
-              <div 
-                key={question.id}
-                className="p-6 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors duration-300 group"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="text-4xl group-hover:scale-125 transition-transform duration-300">
-                      {question.emoji}
+                {/* Pie Chart */}
+                <div className="bg-white rounded-lg border border-gray-200 p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="w-4 h-4 text-gray-400" />
+                    <h3 className="text-sm font-semibold text-gray-900">Répartition</h3>
+                  </div>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value">
+                          {pieData.map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip content={<CustomTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="flex flex-wrap justify-center gap-4 mt-2">
+                      {pieData.map((d, idx) => (
+                        <div key={d.name} className="flex items-center gap-1.5 text-xs text-gray-500">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                          {d.name}
+                        </div>
+                      ))}
                     </div>
-                    <span className="font-bold text-gray-800 text-lg">{question.label}</span>
-                  </div>
-                  
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => handleSymptomChange(question.id, true)}
-                      className={`px-6 py-2 rounded-full font-bold transition-all duration-300 ${
-                        symptoms[question.id] === true
-                          ? 'bg-gradient-to-r from-air-good to-green-500 text-white shadow-lg scale-105'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      OUI
-                    </button>
-                    <button
-                      onClick={() => handleSymptomChange(question.id, false)}
-                      className={`px-6 py-2 rounded-full font-bold transition-all duration-300 ${
-                        symptoms[question.id] === false
-                          ? 'bg-gradient-to-r from-air-bad to-red-500 text-white shadow-lg scale-105'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      NON
-                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
 
-          {/* Action Button */}
-          <div className="p-6 bg-gradient-to-r from-gray-50 to-blue-50 border-t border-gray-200">
-            <button className="w-full bg-gradient-to-r from-respire-500 to-respire-600 text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-300 active:scale-95 text-lg">
-              📤 Valider mes réponses
-            </button>
-            <p className="text-center text-sm text-gray-600 mt-4">
-              ✓ Vos données contribuent à la recherche sur la qualité de l'air au Sénégal
-            </p>
-          </div>
-        </div>
-
-        {/* Statistics */}
-        <div className="mt-12">
-          <h3 className="text-2xl font-bold font-display text-gray-900 mb-6">Statistiques</h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="card-premium hover-lift">
-              <div className="p-8">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 uppercase tracking-widest font-bold mb-2">Participants</p>
-                    <p className="text-5xl font-bold text-respire-600 font-display">82</p>
-                    <p className="text-sm text-gray-500 mt-2">Actifs cette semaine</p>
-                  </div>
-                  <div className="text-5xl">👥</div>
+                {/* Detail cards */}
+                <div className="lg:col-span-2 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {pieData.map((symptom, idx) => (
+                    <div key={symptom.name} className="bg-white rounded-lg border border-gray-200 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                        <span className="text-sm font-medium text-gray-900">{symptom.name}</span>
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900">{symptom.value}</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-xs text-gray-400">signalements</span>
+                        <span className="text-xs font-semibold text-gray-600">{symptom.pourcentage}%</span>
+                      </div>
+                      <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${symptom.pourcentage}%`, backgroundColor: COLORS[idx % COLORS.length] }} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-
-            <div className="card-premium hover-lift">
-              <div className="p-8">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 uppercase tracking-widest font-bold mb-2">Déclarations</p>
-                    <p className="text-5xl font-bold text-respire-600 font-display">156</p>
-                    <p className="text-sm text-gray-500 mt-2">Cette semaine</p>
-                  </div>
-                  <div className="text-5xl">📊</div>
-                </div>
+            ) : (
+              <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                <Smartphone className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <h3 className="text-base font-semibold text-gray-700 mb-1">En attente de données</h3>
+                <p className="text-sm text-gray-400">Les données sont collectées via l'application mobile RESPIRE.</p>
               </div>
-            </div>
-          </div>
-        </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

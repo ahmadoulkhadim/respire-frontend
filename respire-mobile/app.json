@@ -34,7 +34,15 @@
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permettre à RESPIRE d'accéder à votre position.",
+          "locationWhenInUsePermission": "Permettre à RESPIRE d'accéder à votre position."
+        }
+      ],
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true,
