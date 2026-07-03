@@ -10,31 +10,29 @@ Presqu'île du Cap-Vert — Dakar, Sénégal
 
 ## 📋 Table des matières
 
-- [Présentation du projet](#présentation-du-projet)
-- [Architecture générale](#architecture-générale)
-- [Environnement Frontend](#environnement-frontend)
+- [Présentation](#présentation)
+- [Architecture](#architecture)
+- [Structure du dépôt](#structure-du-dépôt)
 - [Installation](#installation)
-- [Lancer les projets](#lancer-les-projets)
-- [Structure des dossiers](#structure-des-dossiers)
-- [Versions utilisées](#versions-utilisées)
-- [Membres de l'équipe](#membres-de-léquipe)
-- [Organisation du projet](#organisation-du-projet)
+- [Lancer le projet](#lancer-le-projet)
+- [Versions](#versions)
+- [Équipe](#équipe)
 
 ---
 
-## 🎯 Présentation du projet
+## 🎯 Présentation
 
 RESPIRE est une plateforme intelligente de surveillance citoyenne de la pollution atmosphérique. Elle combine capteurs IoT, intelligence artificielle et science participative pour :
 
-- **Pilier A** — Calculer la dose de pollution réellement respirée par chaque citoyen (en équivalent cigarettes)
-- **Pilier B** — Constituer une cohorte citoyenne pour corréler exposition et symptômes déclarés
-- **Pilier C** — Simuler l'impact d'interventions environnementales (végétalisation, régulation trafic)
+- **Pilier A** — Calculer la dose de pollution réellement respirée (équivalent cigarettes)
+- **Pilier B** — Constituer une cohorte citoyenne (exposition ↔ symptômes)
+- **Pilier C** — Simuler l'impact d'interventions environnementales
 
 **Zone couverte :** Bargny · Diamniadio · Sébikotane · Hann (Dakar)
 
 ---
 
-## 🏗️ Architecture générale
+## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -52,14 +50,34 @@ RESPIRE est une plateforme intelligente de surveillance citoyenne de la pollutio
 
 ---
 
-## 💻 Environnement Frontend
+## 📁 Structure du dépôt
 
-Ce dépôt contient les deux projets frontend de RESPIRE :
+Ce dépôt est un **monorepo** contenant les trois parties applicatives :
 
-| Projet | Technologie | Rôle |
-|--------|-------------|------|
-| `respire-web` | React 18 + Leaflet | Dashboard décideurs + Simulateur |
-| `respire-mobile` | React Native + Expo | App citoyenne (score, symptômes, profil) |
+```
+respire-frontend/          ← dépôt principal (ce README)
+├── backend/               ← API FastAPI (MySQL + InfluxDB)
+│   ├── app/
+│   │   ├── main.py        ← Point d'entrée FastAPI
+│   │   ├── routes/        ← Endpoints REST
+│   │   └── models/        ← Modèles SQLAlchemy
+│   ├── docker-compose.yml ← MySQL + InfluxDB + API
+│   ├── schema.sql         ← Schéma MySQL
+│   └── API_ENDPOINTS.md   ← Documentation endpoints
+│
+├── respire-web/           ← Dashboard décideurs (React)
+│   └── src/
+│       ├── components/    ← Map, ScoreCard, StatsCards
+│       ├── pages/         ← Dashboard, Sante, Simulateur
+│       ├── services/      ← Appels API (axios)
+│       ├── hooks/         ← useCapteurs
+│       └── utils/         ← doseCalcul (Pilier A)
+│
+└── respire-mobile/        ← App citoyenne (Expo / React Native)
+    └── src/
+        ├── screens/       ← Accueil, Symptômes, Profil
+        └── components/    ← UI mobile
+```
 
 ---
 
@@ -67,154 +85,94 @@ Ce dépôt contient les deux projets frontend de RESPIRE :
 
 ### Prérequis
 
-Avant de commencer, assure-toi d'avoir installé :
+| Outil | Version minimale |
+|-------|-----------------|
+| Node.js | v20 LTS |
+| npm | 10.x |
+| Python | 3.11+ |
+| Docker | 24+ (optionnel, pour BDD) |
+| Git | 2.x |
 
 ```bash
-node --version    # v20.x.x minimum
-npm --version     # 10.x.x minimum
-git --version     # 2.x.x minimum
-expo --version    # 50.x minimum
-```
-
-Si Node.js n'est pas installé → [nodejs.org](https://nodejs.org) (version LTS)
-Si Expo n'est pas installé :
-```bash
-npm install -g expo-cli
-```
-
-### Cloner le dépôt
-
-```bash
-git clone https://github.com/[nom-organisation]/respire-frontend.git
+git clone https://github.com/ahmadoulkhadim/respire-frontend.git
 cd respire-frontend
+make install          # installe web + mobile + backend
+```
+
+Ou manuellement :
+
+```bash
+# Frontend web
+cd respire-web && npm install
+
+# Mobile
+cd respire-mobile && npm install
+
+# Backend
+cd backend && bash setup.sh
+cp .env.example .env    # puis configurer les credentials
 ```
 
 ---
 
-## 🚀 Lancer les projets
+## 🚀 Lancer le projet
 
-### Projet Web (React)
+### Option rapide (Makefile)
 
+```bash
+make dev-db        # MySQL + InfluxDB via Docker
+make dev-backend   # API sur http://localhost:8000
+make dev-web       # Dashboard sur http://localhost:3000
+make dev-mobile    # Expo Go (QR code)
+```
+
+### Manuellement
+
+**1. Bases de données (Docker)**
+```bash
+cd backend
+docker compose up -d mysql influxdb
+```
+
+**2. Backend FastAPI**
+```bash
+cd backend
+source venv/bin/activate
+python -m uvicorn app.main:app --reload
+# → http://localhost:8000/docs (Swagger)
+```
+
+**3. Dashboard Web**
 ```bash
 cd respire-web
-npm install
+cp .env.example .env
 npm start
+# → http://localhost:3000
 ```
 
-➡️ Ouvre automatiquement sur **http://localhost:3000**
-
-### Projet Mobile (React Native + Expo)
-
+**4. App Mobile**
 ```bash
 cd respire-mobile
-npm install
 npx expo start
-```
-
-➡️ Scanne le QR code avec **Expo Go** (App Store / Play Store)
-➡️ Ou appuie sur `w` pour ouvrir dans le navigateur
-
----
-
-## 📁 Structure des dossiers
-
-### `respire-web/src/`
-
-```
-src/
-├── components/           ← Composants réutilisables
-│   ├── Map/              ← Carte Leaflet interactive
-│   │   └── MapView.jsx
-│   ├── ScoreCard/        ← Carte score cigarettes (Pilier A)
-│   │   └── ScoreCard.jsx
-│   ├── AlertBanner/      ← Bandeau alerte qualité air
-│   │   └── AlertBanner.jsx
-│   └── Navbar/           ← Barre de navigation
-│       └── Navbar.jsx
-├── pages/                ← Écrans principaux
-│   ├── Dashboard/        ← Vue globale décideurs
-│   │   └── Dashboard.jsx
-│   ├── Simulateur/       ← Simulateur d'interventions (Pilier C)
-│   │   └── Simulateur.jsx
-│   └── Sante/            ← Cohorte et santé citoyenne (Pilier B)
-│       └── Sante.jsx
-├── services/             ← Appels API vers le backend FastAPI
-│   ├── api.js            ← Configuration axios (base URL)
-│   ├── capteurs.js       ← GET /capteurs, GET /mesures
-│   └── cohorte.js        ← POST /symptomes, GET /correlation
-├── hooks/                ← Custom React hooks
-│   └── useCapteurs.js    ← Hook fetch données capteurs
-├── utils/                ← Fonctions utilitaires
-│   └── doseCalcul.js     ← Calcul dose individuelle (Pilier A)
-├── assets/               ← Images, icônes
-├── App.js
-└── index.js
-```
-
-### `respire-mobile/src/`
-
-```
-src/
-├── screens/              ← Les 3 écrans principaux
-│   ├── AccueilScreen.js  ← Carte + score cigarettes
-│   ├── SymptomsScreen.js ← Déclaration quotidienne (Pilier B)
-│   └── ProfilScreen.js   ← Historique dose + stats semaine
-├── components/           ← Composants UI mobile
-│   ├── ScoreCard.js
-│   ├── AlertBanner.js
-│   └── QuestionCard.js   ← Carte question oui/non
-├── services/             ← Appels API
-│   └── api.js
-├── utils/                ← Calcul GPS + dose
-│   └── doseCalcul.js
-└── assets/
+# → Scanner le QR code avec Expo Go
 ```
 
 ---
 
-## 📦 Versions utilisées
+## 📦 Versions
 
-### Projet Web — `respire-web`
+### Backend (`backend/requirements.txt`)
+FastAPI · SQLAlchemy · PyMySQL · InfluxDB Client · python-jose · passlib
 
-| Package | Version | Rôle |
-|---------|---------|------|
-| react | 18.x | Framework UI |
-| react-dom | 18.x | Rendu DOM |
-| react-router-dom | 6.x | Navigation entre pages |
-| leaflet | 1.9.x | Carte interactive |
-| react-leaflet | 4.x | Composant Leaflet pour React |
-| axios | 1.x | Requêtes HTTP vers l'API |
-| recharts | 2.x | Graphiques PM2.5 / historique |
-| @mui/material | 5.x | Composants UI (boutons, cards) |
-| @emotion/react | 11.x | Styling MUI |
-| @emotion/styled | 11.x | Styling MUI |
+### Frontend Web (`respire-web/package.json`)
+React 19 · react-router-dom 7 · Leaflet · axios · recharts · Tailwind CSS · MUI
 
-### Projet Mobile — `respire-mobile`
-
-| Package | Version | Rôle |
-|---------|---------|------|
-| react-native | 0.73.x | Framework mobile |
-| expo | 50.x | Environnement de développement |
-| expo-location | 16.x | GPS utilisateur (calcul dose) |
-| react-native-maps | 1.x | Carte mobile |
-| @react-navigation/native | 6.x | Navigation entre écrans |
-| @react-navigation/bottom-tabs | 6.x | Barre de navigation bas |
-| axios | 1.x | Requêtes HTTP |
-
-### Environnement de développement
-
-| Outil | Version |
-|-------|---------|
-| Node.js | v20.x.x (LTS) |
-| npm | 10.x.x |
-| Expo CLI | 50.x |
-| Git | 2.x.x |
-| VS Code | 1.89+ |
-| Expo Go (iPhone) | dernière version App Store |
+### Mobile (`respire-mobile/package.json`)
+Expo 56 · React Native 0.85 · expo-location · react-native-maps
 
 ---
 
-## 👥 Membres de l'équipe
+## 👥 Équipe
 
 | Membre | Filière | Responsabilités |
 |--------|---------|-----------------|
@@ -222,48 +180,29 @@ src/
 | **Souleymane Kone** | Informatique | Backend FastAPI, BDD MySQL + InfluxDB |
 | **Marie Daba Diouf** | SSI | Gouvernance données, UML, digital twin |
 | **Mouhamed Drame** | Télécoms | Infrastructure IoT, MQTT, 4G |
-| **Ahmadoul Khadim Touré** | Informatique | **Frontend React + React Native, UX/UI** |
+| **Ahmadoul Khadim Touré** | Informatique | Frontend React + React Native, UX/UI |
 | **Ndeye Sokhna Ndao** | SSI | Privacy by design, JWT, sécurité |
-
----
-
-## 📅 Organisation du projet
-
-### Sprints
-
-| Sprint | Période | Objectif |
-|--------|---------|----------|
-| Sprint 1 | Sem. 1-2 | Setup environnements + composants de base |
-| Sprint 2 | Sem. 3-4 | Intégration API + carte interactive |
-| Sprint 3 | Sem. 5-6 | Pilier A (score) + Pilier B (symptômes) |
-| Sprint 4 | Sem. 7-8 | Simulateur (Pilier C) + dashboard |
-| Sprint 5 | Sem. 9-10 | Tests, polish, soutenance |
-
-### Outils de collaboration
-
-- **Gestion de tâches :** Trello (tableau Kanban)
-- **Versioning :** GitHub (ce dépôt)
-- **Communication :** WhatsApp Groupe 5
-- **Design :** Figma / Maquettes HTML
 
 ---
 
 ## 🔗 Liens utiles
 
-- Backend API : `http://localhost:8000` (FastAPI — Souleymane)
-- Documentation API : `http://localhost:8000/docs` (Swagger auto-généré)
-- Maquettes UI : `/docs/maquettes/RESPIRE_Maquettes.html`
-- Tableau Trello : [lien à ajouter]
+| Ressource | URL |
+|-----------|-----|
+| API Backend | http://localhost:8000 |
+| Swagger / Docs | http://localhost:8000/docs |
+| Endpoints détaillés | [backend/API_ENDPOINTS.md](backend/API_ENDPOINTS.md) |
+| Backend README | [backend/README.md](backend/README.md) |
+| Web README | [respire-web/README.md](respire-web/README.md) |
 
 ---
 
-## 📝 Notes importantes
+## 📝 Notes
 
-- Les données de santé (symptômes) sont **strictement anonymisées** — aucun nom stocké
-- Conformité **CDP Sénégal** (protection des données personnelles)
-- Toutes les contributions passent par des **Pull Requests** sur GitHub
-- Chaque PR doit être validée par au moins **1 autre membre**
+- Les données de santé sont **strictement anonymisées** (conformité CDP Sénégal)
+- Ne jamais committer `.env`, `venv/` ou `node_modules/` (voir `.gitignore`)
+- Contributions via **Pull Requests** validées par au moins 1 membre
 
 ---
 
-*Dernière mise à jour : Mai 2026 · Ahmadoul Khadim Touré*
+*Dernière mise à jour : Juin 2026 · Ahmadoul Khadim Touré*
