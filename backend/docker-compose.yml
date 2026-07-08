@@ -10,7 +10,7 @@ services:
       MYSQL_USER: respire_user
       MYSQL_PASSWORD: respire_password
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
@@ -53,8 +53,8 @@ services:
       MYSQL_PASSWORD: respire_password
       MYSQL_DATABASE: respire_db
       INFLUX_URL: http://influxdb:8086
-      INFLUX_TOKEN: your_influx_token
-      INFLUX_ORG: your_org
+      INFLUX_TOKEN: Z_CaoV14hiZDM6D6AOV93-rjZ_IZMFpKl-0qeIPNrd4VepNybZJ5fujBAMK29sl6cya3PGs7XEv1uMjTpxGGkQ==
+      INFLUX_ORG: respire_org
       INFLUX_BUCKET: respire_data
       SECRET_KEY: your-super-secret-key-change-in-production
     ports:

@@ -17,7 +17,7 @@ app.add_middleware(
 )
 
 # Import routes
-from app.routes import auth, users, profil, cohortes, capteurs, data
+from app.routes import auth, users, profil, cohortes, capteurs, data, sync
 
 # Include routes
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
@@ -26,6 +26,7 @@ app.include_router(profil.router, prefix="/api/users", tags=["profil"])
 app.include_router(cohortes.router, prefix="/api/cohortes", tags=["cohortes"])
 app.include_router(capteurs.router, prefix="/api/capteurs", tags=["capteurs"])
 app.include_router(data.router, prefix="/api/data", tags=["data"])
+app.include_router(sync.router, prefix="/api/sync", tags=["sync"])
 
 
 @app.get("/", tags=["health"])
