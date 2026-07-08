@@ -42,6 +42,14 @@ const api = {
     const axios = (await import('axios')).default;
     return axios.post(url, data);
   },
+  put: async (url, data) => {
+    const axios = (await import('axios')).default;
+    return axios.put(url, data);
+  },
+  delete: async (url) => {
+    const axios = (await import('axios')).default;
+    return axios.delete(url);
+  },
 };
 
 export default api;
